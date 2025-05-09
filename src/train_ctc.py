@@ -33,16 +33,18 @@ for epoch in range(EPOCHS):
         kanji, hiragana = dataset[i]
 
         if len(hiragana) == 0 or len(kanji) == 0:
-            print(f"Skipping empty at index {i}: {kanji} -> {hiragana}")
             continue
 
-        input_indices = encode(kanji).unsqueeze(0)
-        input_seq = embedding(input_indices)
+        # Encode sequences
+        input_indices = encode(kanji).unsqueeze(0)  # (1, seq_len)
         target_seq = encode(hiragana)
 
-        if input_seq.size(1) < target_seq.size(0):
-            print(f"Skipping short input at index {i}: input_len={input_seq.size(1)}, target_len={target_seq.size(0)}")
-            continue
+        # Expand input to match or exceed target length by repeating
+        repeat_factor = (len(target_seq) + input_indices.size(1) - 1) // input_indices.size(1)
+        expanded_indices = input_indices.repeat(1, repeat_factor)  # Repeat
+        expanded_indices = expanded_indices[:, :len(target_seq)]   # Trim to target length
+
+        input_seq = embedding(expanded_indices)
 
         input_lengths = torch.tensor([input_seq.size(1)])
         target_lengths = torch.tensor([len(target_seq)])
@@ -55,7 +57,6 @@ for epoch in range(EPOCHS):
         loss = torch.clamp(loss, max=100.0)
 
         if torch.isnan(loss) or torch.isinf(loss):
-            print(f"Skipping invalid loss at index {i}")
             continue
 
         optimizer.zero_grad()
@@ -71,6 +72,7 @@ for epoch in range(EPOCHS):
     else:
         print(f"Epoch {epoch + 1}/{EPOCHS}, Average Loss: {total_loss / valid_batches:.4f}")
 
+# Save model and vocab
 os.makedirs("models", exist_ok=True)
 torch.save({
     'model_state_dict': model.state_dict(),
