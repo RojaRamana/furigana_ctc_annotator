@@ -1,4 +1,8 @@
 import torch
+import torch.nn as nn
+from ctc_model import CTCAnnotator
+from data_loader import KanjiHiraganaDataset
+from ctc_decoder import beam_search_decoder
 from ctc_model import CTCAnnotator
 from data_loader import KanjiHiraganaDataset
 from ctc_decoder import beam_search_decoder
