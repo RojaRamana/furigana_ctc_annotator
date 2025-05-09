@@ -53,4 +53,5 @@ for epoch in range(EPOCHS):
 
         # Forward pass
         logits = model(input_seq)
-        log_probs = torch.nn.functional.log_softmax(logits,
+        log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
+	log_probs = log_probs.transpose(0, 1)  # For CTC Loss
