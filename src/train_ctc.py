@@ -20,8 +20,8 @@ def encode(text):
 # Hyperparameters
 HIDDEN_SIZE = 256
 NUM_LAYERS = 5
-EPOCHS = 1  # Adjust as needed
-LEARNING_RATE = 0.0001  # Safer learning rate
+EPOCHS = 10  # Increased for better learning
+LEARNING_RATE = 0.0001  # Stable learning rate
 
 # Model, Loss, Optimizer
 embedding = nn.Embedding(vocab_size, HIDDEN_SIZE)
@@ -33,7 +33,7 @@ optimizer = optim.Adam(list(model.parameters()) + list(embedding.parameters()), 
 for epoch in range(EPOCHS):
     total_loss = 0.0
     valid_batches = 0
-    for i in range(100):  # Adjust as needed for larger training
+    for i in range(len(dataset)):  # Train on full dataset
         kanji, hiragana = dataset[i]
 
         if len(hiragana) == 0 or len(kanji) == 0:
