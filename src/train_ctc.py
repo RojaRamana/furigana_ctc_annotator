@@ -31,13 +31,22 @@ optimizer = optim.Adam(list(model.parameters()) + list(embedding.parameters()), 
 # Training Loop
 for epoch in range(EPOCHS):
     total_loss = 0.0
+    valid_batches = 0
     for i in range(100):  # Limit to first 100 samples for testing
         kanji, hiragana = dataset[i]
+
+        # Skip empty samples
+        if len(hiragana) == 0 or len(kanji) == 0:
+            continue
 
         # Encode sequences
         input_indices = encode(kanji).unsqueeze(0)  # (1, seq_len)
         input_seq = embedding(input_indices)       # (1, seq_len, hidden_size)
         target_seq = encode(hiragana)
+
+        # Skip if input is shorter than target
+        if input_seq.size(1) < target_seq.size(0):
+            continue
 
         input_lengths = torch.tensor([input_seq.size(1)])
         target_lengths = torch.tensor([len(target_seq)])
@@ -50,11 +59,23 @@ for epoch in range(EPOCHS):
         # Compute loss
         loss = criterion(log_probs, target_seq.unsqueeze(0), input_lengths, target_lengths)
 
+        # Skip NaN losses
+        if torch.isnan(loss):
+            continue
+
         # Backward pass
         optimizer.zero_grad()
         loss.backward()
+
+        # Clip gradients to prevent explosion
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)
+
         optimizer.step()
 
         total_loss += loss.item()
+        valid_batches += 1
 
-    print(f"Epoch {epoch + 1}/{EPOCHS}, Loss: {total_loss:.4f}")
+    if valid_batches == 0:
+        print("No valid batches found.")
+    else:
+        print(f"Epoch {epoch + 1}/{EPOCHS}, Average Loss: {total_loss / valid_batches:.4f}")
