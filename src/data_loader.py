@@ -13,8 +13,10 @@ class KanjiHiraganaDataset(Dataset):
         self.pairs = []
         for line in lines:
             parts = line.split("\t")
-            if len(parts) == 2:  # Only accept valid pairs
-                self.pairs.append(parts)
+            if len(parts) >= 2:
+                kanji = parts[0]
+                hiragana = "\t".join(parts[1:])  # Join extra parts
+                self.pairs.append((kanji, hiragana))
 
     def __len__(self):
         return len(self.pairs)
