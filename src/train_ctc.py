@@ -7,7 +7,7 @@ from ctc_model import CTCAnnotator
 # Dataset
 dataset = KanjiHiraganaDataset("data/kanji_hiragana_pairs.tsv")
 
-# Character vocab simulation (you'll replace this with real vocab mapping later)
+# Character vocab simulation (replace this with real vocab mapping later)
 char_vocab = list("".join([kanji + hira for kanji, hira in dataset]))
 char2idx = {char: idx + 1 for idx, char in enumerate(set(char_vocab))}
 char2idx["<blank>"] = 0
@@ -19,7 +19,7 @@ def encode(text):
 # Hyperparameters
 HIDDEN_SIZE = 256
 NUM_LAYERS = 5
-EPOCHS = 1  # Reduced to 1 for faster testing
+EPOCHS = 1  # Run 1 epoch for testing speed
 LEARNING_RATE = 0.001
 
 # Model, Loss, Optimizer
@@ -31,7 +31,9 @@ optimizer = optim.Adam(list(model.parameters()) + list(embedding.parameters()), 
 # Training Loop
 for epoch in range(EPOCHS):
     total_loss = 0.0
-    for kanji, hiragana in dataset[:100]:  # Limit to first 100 samples for faster testing
+    for i in range(100):  # Limit to first 100 samples for testing
+        kanji, hiragana = dataset[i]
+
         # Encode sequences
         input_indices = encode(kanji).unsqueeze(0)  # (1, seq_len)
         input_seq = embedding(input_indices)       # (1, seq_len, hidden_size)
@@ -40,7 +42,7 @@ for epoch in range(EPOCHS):
         input_lengths = torch.tensor([input_seq.size(1)])
         target_lengths = torch.tensor([len(target_seq)])
 
-        # Forward
+        # Forward pass
         logits = model(input_seq)
         log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
         log_probs = log_probs.transpose(0, 1)  # For CTC Loss
@@ -48,7 +50,7 @@ for epoch in range(EPOCHS):
         # Compute loss
         loss = criterion(log_probs, target_seq.unsqueeze(0), input_lengths, target_lengths)
 
-        # Backward
+        # Backward pass
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
