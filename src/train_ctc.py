@@ -20,7 +20,7 @@ def encode(text):
 HIDDEN_SIZE = 256
 NUM_LAYERS = 5
 EPOCHS = 1  # Run 1 epoch for testing speed
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0001  # Lowered learning rate to avoid exploding loss
 
 # Model, Loss, Optimizer
 embedding = nn.Embedding(vocab_size, HIDDEN_SIZE)
@@ -53,29 +53,4 @@ for epoch in range(EPOCHS):
 
         # Forward pass
         logits = model(input_seq)
-        log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
-        log_probs = log_probs.transpose(0, 1)  # For CTC Loss
-
-        # Compute loss
-        loss = criterion(log_probs, target_seq.unsqueeze(0), input_lengths, target_lengths)
-
-        # Skip NaN losses
-        if torch.isnan(loss):
-            continue
-
-        # Backward pass
-        optimizer.zero_grad()
-        loss.backward()
-
-        # Clip gradients to prevent explosion
-        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)
-
-        optimizer.step()
-
-        total_loss += loss.item()
-        valid_batches += 1
-
-    if valid_batches == 0:
-        print("No valid batches found.")
-    else:
-        print(f"Epoch {epoch + 1}/{EPOCHS}, Average Loss: {total_loss / valid_batches:.4f}")
+        log_probs = torch.nn.functional.log_softmax(logits,
