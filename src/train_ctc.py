@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import os
 from data_loader import KanjiHiraganaDataset
 from ctc_model import CTCAnnotator
 
@@ -19,8 +20,8 @@ def encode(text):
 # Hyperparameters
 HIDDEN_SIZE = 256
 NUM_LAYERS = 5
-EPOCHS = 1  # Run 1 epoch for testing speed
-LEARNING_RATE = 0.0001  # Lowered learning rate to avoid exploding loss
+EPOCHS = 1  # Adjust as needed
+LEARNING_RATE = 0.0001  # Safer learning rate
 
 # Model, Loss, Optimizer
 embedding = nn.Embedding(vocab_size, HIDDEN_SIZE)
@@ -32,47 +33,35 @@ optimizer = optim.Adam(list(model.parameters()) + list(embedding.parameters()), 
 for epoch in range(EPOCHS):
     total_loss = 0.0
     valid_batches = 0
-    for i in range(100):  # Limit to first 100 samples for testing
+    for i in range(100):  # Adjust as needed for larger training
         kanji, hiragana = dataset[i]
 
-        # Skip empty samples
         if len(hiragana) == 0 or len(kanji) == 0:
             continue
 
-        # Encode sequences
-        input_indices = encode(kanji).unsqueeze(0)  # (1, seq_len)
-        input_seq = embedding(input_indices)       # (1, seq_len, hidden_size)
+        input_indices = encode(kanji).unsqueeze(0)
+        input_seq = embedding(input_indices)
         target_seq = encode(hiragana)
 
-        # Skip if input is shorter than target
         if input_seq.size(1) < target_seq.size(0):
             continue
 
         input_lengths = torch.tensor([input_seq.size(1)])
         target_lengths = torch.tensor([len(target_seq)])
 
-        # Forward pass
         logits = model(input_seq)
         log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
-        log_probs = log_probs.transpose(0, 1)  # For CTC Loss
+        log_probs = log_probs.transpose(0, 1)
 
-        # Compute loss
         loss = criterion(log_probs, target_seq.unsqueeze(0), input_lengths, target_lengths)
-
-        # Clamp loss to avoid exploding values
         loss = torch.clamp(loss, max=100.0)
 
-        # Skip NaN or Inf losses
         if torch.isnan(loss) or torch.isinf(loss):
             continue
 
-        # Backward pass
         optimizer.zero_grad()
         loss.backward()
-
-        # Clip gradients to prevent explosion
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)
-
         optimizer.step()
 
         total_loss += loss.item()
@@ -82,3 +71,13 @@ for epoch in range(EPOCHS):
         print("No valid batches found.")
     else:
         print(f"Epoch {epoch + 1}/{EPOCHS}, Average Loss: {total_loss / valid_batches:.4f}")
+
+# Save model and vocab
+os.makedirs("models", exist_ok=True)
+torch.save({
+    'model_state_dict': model.state_dict(),
+    'embedding_state_dict': embedding.state_dict(),
+    'char2idx': char2idx
+}, "models/ctc_model_checkpoint.pth")
+
+print("Model saved to models/ctc_model_checkpoint.pth")
