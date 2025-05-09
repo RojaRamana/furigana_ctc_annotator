@@ -10,7 +10,11 @@ class KanjiHiraganaDataset(Dataset):
     def __init__(self, filepath):
         with open(filepath, encoding="utf-8") as f:
             lines = f.read().strip().split("\n")
-        self.pairs = [line.split("\t") for line in lines]
+        self.pairs = []
+        for line in lines:
+            parts = line.split("\t")
+            if len(parts) == 2:  # Only accept valid pairs
+                self.pairs.append(parts)
 
     def __len__(self):
         return len(self.pairs)
