@@ -1,5 +1,10 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
+import sys
+import io
+
+# Fix Windows UTF-8 print issues
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 class KanjiHiraganaDataset(Dataset):
     def __init__(self, filepath):
@@ -16,6 +21,6 @@ class KanjiHiraganaDataset(Dataset):
 
 # Example usage
 if __name__ == "__main__":
-    dataset = KanjiHiraganaDataset("../data/kanji_hiragana_pairs.tsv")
+    dataset = KanjiHiraganaDataset("data/kanji_hiragana_pairs.tsv")
     for kanji, hiragana in dataset:
         print(f"Kanji: {kanji} -> Hiragana: {hiragana}")
