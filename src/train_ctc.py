@@ -23,16 +23,18 @@ EPOCHS = 5
 LEARNING_RATE = 0.001
 
 # Model, Loss, Optimizer
+embedding = nn.Embedding(vocab_size, HIDDEN_SIZE)
 model = CTCAnnotator(vocab_size, HIDDEN_SIZE, NUM_LAYERS)
 criterion = nn.CTCLoss(blank=0)
-optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+optimizer = optim.Adam(list(model.parameters()) + list(embedding.parameters()), lr=LEARNING_RATE)
 
 # Training Loop
 for epoch in range(EPOCHS):
     total_loss = 0.0
     for kanji, hiragana in dataset:
         # Encode sequences
-        input_seq = encode(kanji).unsqueeze(0).float()  # Add batch dim
+        input_indices = encode(kanji).unsqueeze(0)  # (1, seq_len)
+        input_seq = embedding(input_indices)       # (1, seq_len, hidden_size)
         target_seq = encode(hiragana)
 
         input_lengths = torch.tensor([input_seq.size(1)])
@@ -54,3 +56,4 @@ for epoch in range(EPOCHS):
         total_loss += loss.item()
 
     print(f"Epoch {epoch + 1}/{EPOCHS}, Loss: {total_loss:.4f}")
+
