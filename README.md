@@ -1,0 +1,1 @@
+# Furigana CTC Annotator
