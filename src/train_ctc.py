@@ -19,7 +19,7 @@ def encode(text):
 # Hyperparameters
 HIDDEN_SIZE = 256
 NUM_LAYERS = 5
-EPOCHS = 5
+EPOCHS = 1  # Reduced to 1 for faster testing
 LEARNING_RATE = 0.001
 
 # Model, Loss, Optimizer
@@ -31,7 +31,7 @@ optimizer = optim.Adam(list(model.parameters()) + list(embedding.parameters()), 
 # Training Loop
 for epoch in range(EPOCHS):
     total_loss = 0.0
-    for kanji, hiragana in dataset:
+    for kanji, hiragana in dataset[:100]:  # Limit to first 100 samples for faster testing
         # Encode sequences
         input_indices = encode(kanji).unsqueeze(0)  # (1, seq_len)
         input_seq = embedding(input_indices)       # (1, seq_len, hidden_size)
@@ -56,4 +56,3 @@ for epoch in range(EPOCHS):
         total_loss += loss.item()
 
     print(f"Epoch {epoch + 1}/{EPOCHS}, Loss: {total_loss:.4f}")
-
